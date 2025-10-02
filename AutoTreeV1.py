@@ -2,12 +2,15 @@ import tkinter as tk
 from tkinter import ttk, simpledialog, messagebox, filedialog
 import json, os
 
-
-class ModernTreeFolderMaker:
+class ProfessionalTreeFolderMaker:
     def __init__(self, root):
         self.root = root
-        self.root.title("ModernTreeFolderMaker")
-        self.root.geometry("600x400")
+        self.root.title("ProfessionalTreeFolderMaker")
+        self.root.geometry("700x500")
+
+        # Icons
+        self.folder_icon = tk.PhotoImage(file="folder_icon.png")  # put your own small PNG
+        self.file_icon = tk.PhotoImage(file="file_icon.png")      # put your own small PNG
 
         # Style
         style = ttk.Style(root)
@@ -16,7 +19,7 @@ class ModernTreeFolderMaker:
         style.map("Treeview", background=[('selected', '#6cace4')], foreground=[('selected', 'white')])
 
         # Tree
-        self.tree = ttk.Treeview(root, selectmode="browse")
+        self.tree = ttk.Treeview(root, selectmode="extended")
         self.tree.pack(fill=tk.BOTH, expand=True, side=tk.LEFT)
         self.tree.bind("<Button-3>", self.show_context_menu)
         self.tree.bind("<ButtonPress-1>", self.on_drag_start)
@@ -29,7 +32,7 @@ class ModernTreeFolderMaker:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Root node
-        self.root_node = self.tree.insert("", tk.END, text="Project", open=True)
+        self.root_node = self.tree.insert("", tk.END, text="Project", open=True, image=self.folder_icon)
 
         # Context menu
         self.menu = tk.Menu(root, tearoff=0)
@@ -64,7 +67,8 @@ class ModernTreeFolderMaker:
 
     def move_item(self, item, parent):
         text = self.tree.item(item, "text")
-        new_item = self.tree.insert(parent, tk.END, text=text)
+        image = self.tree.item(item, "image")
+        new_item = self.tree.insert(parent, tk.END, text=text, image=image)
         for child in self.tree.get_children(item):
             self.move_item(child, new_item)
         self.tree.delete(item)
@@ -81,13 +85,13 @@ class ModernTreeFolderMaker:
         selected = self.tree.selection() or (self.root_node,)
         name = simpledialog.askstring("Folder Name", "Enter folder name:")
         if name:
-            self.tree.insert(selected[0], tk.END, text=name)
+            self.tree.insert(selected[0], tk.END, text=name, image=self.folder_icon)
 
     def add_file(self):
         selected = self.tree.selection() or (self.root_node,)
         name = simpledialog.askstring("File Name", "Enter file name:")
         if name:
-            self.tree.insert(selected[0], tk.END, text=name + " (file)")
+            self.tree.insert(selected[0], tk.END, text=name, image=self.file_icon)
 
     def rename_item(self):
         selected = self.tree.selection()
@@ -103,7 +107,8 @@ class ModernTreeFolderMaker:
             return
         confirm = messagebox.askyesno("Delete", "Are you sure you want to delete this item?")
         if confirm:
-            self.tree.delete(selected[0])
+            for item in selected:
+                self.tree.delete(item)
 
     # Save/load tree as JSON
     def tree_to_dict(self, node):
@@ -111,8 +116,8 @@ class ModernTreeFolderMaker:
         result = {}
         for child in children:
             text = self.tree.item(child, "text")
-            if text.endswith(" (file)"):
-                result[text[:-7]] = "file"
+            if self.tree.item(child, "image") == str(self.file_icon):
+                result[text] = "file"
             else:
                 result[text] = self.tree_to_dict(child)
         return result
@@ -120,9 +125,9 @@ class ModernTreeFolderMaker:
     def dict_to_tree(self, parent, structure):
         for name, content in structure.items():
             if content == "file":
-                self.tree.insert(parent, tk.END, text=name + " (file)")
+                self.tree.insert(parent, tk.END, text=name, image=self.file_icon)
             else:
-                node = self.tree.insert(parent, tk.END, text=name)
+                node = self.tree.insert(parent, tk.END, text=name, image=self.folder_icon)
                 self.dict_to_tree(node, content)
 
     def save_tree(self):
@@ -139,7 +144,7 @@ class ModernTreeFolderMaker:
             with open(file_path, "r") as f:
                 structure = json.load(f)
             self.tree.delete(*self.tree.get_children())
-            self.root_node = self.tree.insert("", tk.END, text="Project", open=True)
+            self.root_node = self.tree.insert("", tk.END, text="Project", open=True, image=self.folder_icon)
             self.dict_to_tree(self.root_node, structure)
 
     # Export tree to disk
@@ -152,16 +157,16 @@ class ModernTreeFolderMaker:
     def _export_node(self, node, path):
         for child in self.tree.get_children(node):
             text = self.tree.item(child, "text")
-            if text.endswith(" (file)"):
-                with open(os.path.join(path, text[:-7]), "w") as f:
-                    f.write("")
+            image = self.tree.item(child, "image")
+            if str(image) == str(self.file_icon):
+                with open(os.path.join(path, text), "w") as f:
+                    f.write("")  # empty file
             else:
                 new_path = os.path.join(path, text)
                 os.makedirs(new_path, exist_ok=True)
                 self._export_node(child, new_path)
 
-
 if __name__ == "__main__":
     root = tk.Tk()
-    app = ModernTreeFolderMaker(root)
+    app = ProfessionalTreeFolderMaker(root)
     root.mainloop()
