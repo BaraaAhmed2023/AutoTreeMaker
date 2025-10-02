@@ -4,6 +4,7 @@ import json, os
 
 class ProfessionalTreeFolderMaker:
     def __init__(self, root):
+        # Root
         self.root = root
         self.root.title("ProfessionalTreeFolderMaker")
         self.root.geometry("700x500")
